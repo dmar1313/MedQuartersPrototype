@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 class="text-2xl font-bold mb-4">Dispatcher Dashboard</h2>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="bg-white p-4 rounded shadow">
+        <h3 class="text-xl font-bold mb-2">Create New Trip</h3>
+        <form id="create-trip-form">
+            {{ form.hidden_tag() }}
+            <div class="mb-4">
+                {{ form.patient_name.label(class="block text-gray-700 text-sm font-bold mb-2") }}
+                {{ form.patient_name(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline") }}
+            </div>
+            <div class="mb-4">
+                {{ form.pickup_location.label(class="block text-gray-700 text-sm font-bold mb-2") }}
+                {{ form.pickup_location(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline") }}
+            </div>
+            <div class="mb-4">
+                {{ form.dropoff_location.label(class="block text-gray-700 text-sm font-bold mb-2") }}
+                {{ form.dropoff_location(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline") }}
+            </div>
+            <div class="mb-4">
+                {{ form.pickup_time.label(class="block text-gray-700 text-sm font-bold mb-2") }}
+                {{ form.pickup_time(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline") }}
+            </div>
+            <div class="mb-4">
+                {{ form.driver_id.label(class="block text-gray-700 text-sm font-bold mb-2") }}
+                {{ form.driver_id(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline") }}
+            </div>
+            {{ form.submit(class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline") }}
+        </form>
+    </div>
+
+    <div class="bg-white p-4 rounded shadow">
+        <h3 class="text-xl font-bold mb-2">Current Trips</h3>
+        <ul id="trip-list" class="divide-y divide-gray-200">
+            {% for trip in trips %}
+            <li class="py-2">
+                <p><strong>Patient:</strong> {{ trip.patient_name }}</p>
+                <p><strong>Pickup:</strong> {{ trip.pickup_location }}</p>
+                <p><strong>Dropoff:</strong> {{ trip.dropoff_location }}</p>
+                <p><strong>Time:</strong> {{ trip.pickup_time.strftime('%Y-%m-%d %H:%M') }}</p>
+                <p><strong>Status:</strong> {{ trip.status }}</p>
+                <p><strong>Driver:</strong> {{ trip.driver.username if trip.driver else 'Unassigned' }}</p>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dispatcher.js') }}"></script>
+{% endblock %}
