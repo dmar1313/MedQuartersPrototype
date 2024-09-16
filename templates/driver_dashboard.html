@@ -18,6 +18,7 @@
             {% elif trip.status == 'In Progress' %}
             <button class="complete-trip bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2">Complete Trip</button>
             {% endif %}
+            <button class="navigate bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded mt-2" data-address="{{ trip.pickup_location }}">Navigate to Pickup</button>
         </li>
         {% endfor %}
     </ul>
@@ -50,4 +51,7 @@
 {% block scripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/1.5.3/signature_pad.min.js"></script>
 <script src="{{ url_for('static', filename='js/driver.js') }}"></script>
+<script>
+    document.body.dataset.driverId = "{{ current_user.id }}";
+</script>
 {% endblock %}

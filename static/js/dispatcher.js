@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const createTripForm = document.getElementById('create-trip-form');
     const tripList = document.getElementById('trip-list');
+    const socket = io();
 
     createTripForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -22,5 +23,29 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error:', error);
             alert('An error occurred while creating the trip.');
         });
+    });
+
+    socket.on('connect', function() {
+        socket.emit('join', {room: 'dispatchers'});
+    });
+
+    socket.on('trip_status_update', function(data) {
+        const tripElement = document.querySelector(`li[data-trip-id="${data.trip_id}"]`);
+        if (tripElement) {
+            const statusElement = tripElement.querySelector('.trip-status');
+            if (statusElement) {
+                statusElement.textContent = data.status;
+            }
+        }
+    });
+
+    socket.on('trip_completed', function(data) {
+        const tripElement = document.querySelector(`li[data-trip-id="${data.trip_id}"]`);
+        if (tripElement) {
+            const statusElement = tripElement.querySelector('.trip-status');
+            if (statusElement) {
+                statusElement.textContent = 'Completed';
+            }
+        }
     });
 });

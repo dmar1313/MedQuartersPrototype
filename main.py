@@ -4,6 +4,8 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from models import db, User, Trip, Signature
 from forms import LoginForm, SignUpForm, TripForm
 from config import Config
+from flask_socketio import SocketIO, emit, join_room
+from urllib.parse import urlparse
 import os
 
 app = Flask(__name__)
@@ -12,6 +14,7 @@ app.config.from_object(Config)
 db.init_app(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+socketio = SocketIO(app)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -35,7 +38,7 @@ def login():
         if user and check_password_hash(user.password_hash, form.password.data):
             login_user(user)
             next_page = request.args.get('next')
-            if not next_page or not next_page.startswith('/'):
+            if not next_page or urlparse(next_page).netloc != '':
                 next_page = url_for('index')
             return redirect(next_page)
         flash('Invalid username or password')
@@ -96,6 +99,7 @@ def create_trip():
         )
         db.session.add(trip)
         db.session.commit()
+        socketio.emit('new_trip', {'trip_id': trip.id, 'patient_name': trip.patient_name}, room=f'driver_{trip.driver_id}')
         return jsonify({'success': True, 'trip_id': trip.id})
     return jsonify({'error': 'Invalid form data'}), 400
 
@@ -110,6 +114,7 @@ def update_trip_status():
     if trip and trip.driver_id == current_user.id:
         trip.status = new_status
         db.session.commit()
+        socketio.emit('trip_status_update', {'trip_id': trip.id, 'status': new_status}, room='dispatchers')
         return jsonify({'success': True})
     return jsonify({'error': 'Invalid trip or unauthorized'}), 400
 
@@ -126,10 +131,24 @@ def submit_signature():
         db.session.add(signature)
         trip.status = 'Completed'
         db.session.commit()
+        socketio.emit('trip_completed', {'trip_id': trip.id}, room='dispatchers')
         return jsonify({'success': True})
     return jsonify({'error': 'Invalid trip or unauthorized'}), 400
+
+@socketio.on('connect')
+def handle_connect():
+    if current_user.is_authenticated:
+        if current_user.role == 'dispatcher':
+            join_room('dispatchers')
+        elif current_user.role == 'driver':
+            join_room(f'driver_{current_user.id}')
+
+@socketio.on('join')
+def on_join(data):
+    room = data['room']
+    join_room(room)
 
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(host='0.0.0.0', port=5000)
+    socketio.run(app, host='0.0.0.0', port=5000)

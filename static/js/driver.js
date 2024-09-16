@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const signatureModal = document.getElementById('signature-modal');
     const signaturePad = new SignaturePad(document.getElementById('signature-pad'));
     let currentTripId = null;
+    const socket = io();
 
     tripList.addEventListener('click', function(e) {
         if (e.target.classList.contains('start-trip')) {
@@ -78,6 +79,16 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('An error occurred while submitting the signature.');
         });
     }
+
+    socket.on('connect', function() {
+        const driverId = document.body.dataset.driverId;
+        socket.emit('join', {room: `driver_${driverId}`});
+    });
+
+    socket.on('new_trip', function(data) {
+        alert(`New trip assigned: Patient ${data.patient_name}`);
+        location.reload(); // Reload the page to show the new trip
+    });
 
     // Add event listener for opening navigation app
     tripList.addEventListener('click', function(e) {
