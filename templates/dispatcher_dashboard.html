@@ -27,64 +27,75 @@
             </div>
         </header>
         
-        <div class="filter-bar">
-            <select id="status-filter" class="filter-select">
-                <option value="All">All Statuses</option>
-                {% for status in statuses %}
-                    {% if status != 'All' %}
-                        <option value="{{ status }}">{{ status }}</option>
-                    {% endif %}
-                {% endfor %}
-            </select>
-            <select id="date-range-filter" class="filter-select">
-                <option value="all">All Dates</option>
-                <option value="today">Today</option>
-                <option value="week">This Week</option>
-                <option value="month">This Month</option>
-            </select>
-            <select id="driver-filter" class="filter-select">
-                <option value="all">All Drivers</option>
-            </select>
-            <button id="apply-filters" class="filter-btn">Apply Filters</button>
-        </div>
-
         <div class="dashboard-grid">
-            <div class="grid-item reporting-dashboard">
+            <div class="grid-item map-hub">
+                <h2>Live Map Hub</h2>
+                <div id="map" class="map-container" style="height: 400px; width: 100%;"></div>
+            </div>
+            <div class="grid-item trip-summary">
                 <h2>Trip Summary</h2>
                 <div id="filtered-trips-list" class="filtered-trips-list"></div>
             </div>
-            <div class="grid-item map-hub">
-                <h2>Live Map Hub</h2>
-                <div id="map" class="map-container"></div>
+        </div>
+
+        <div class="filter-bar">
+            <div class="filter-group">
+                <label for="status-filter">Status:</label>
+                <select id="status-filter" class="filter-select">
+                    <option value="All">All Statuses</option>
+                    {% for status in statuses %}
+                        {% if status != 'All' %}
+                            <option value="{{ status }}">{{ status }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
             </div>
+            <div class="filter-group">
+                <label for="date-range-filter">Date Range:</label>
+                <select id="date-range-filter" class="filter-select">
+                    <option value="all">All Dates</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="driver-filter">Driver:</label>
+                <select id="driver-filter" class="filter-select">
+                    <option value="all">All Drivers</option>
+                </select>
+            </div>
+            <button id="apply-filters" class="filter-btn">Apply Filters</button>
         </div>
 
         <div class="grid-item all-trips">
             <h2>All Trips</h2>
-            <table class="trips-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Patient Name</th>
-                        <th>Pickup Location</th>
-                        <th>Dropoff Location</th>
-                        <th>Status</th>
-                        <th>Driver</th>
-                    </tr>
-                </thead>
-                <tbody id="trip-list">
-                    {% for trip in trips %}
-                    <tr>
-                        <td>{{ trip.id }}</td>
-                        <td>{{ trip.patient_name }}</td>
-                        <td>{{ trip.pickup_location }}</td>
-                        <td>{{ trip.dropoff_location }}</td>
-                        <td>{{ trip.status }}</td>
-                        <td>{{ trip.driver.username if trip.driver else 'Unassigned' }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="trips-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Patient Name</th>
+                            <th>Pickup Location</th>
+                            <th>Dropoff Location</th>
+                            <th>Status</th>
+                            <th>Driver</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trip-list">
+                        {% for trip in trips %}
+                        <tr>
+                            <td>{{ trip.id }}</td>
+                            <td>{{ trip.patient_name }}</td>
+                            <td>{{ trip.pickup_location }}</td>
+                            <td>{{ trip.dropoff_location }}</td>
+                            <td>{{ trip.status }}</td>
+                            <td>{{ trip.driver.username if trip.driver else 'Unassigned' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>

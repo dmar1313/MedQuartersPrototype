@@ -19,21 +19,28 @@ document.addEventListener('DOMContentLoaded', function() {
     let map;
     let markers = [];
 
-    // Initialize the map
     function initMap() {
-        map = L.map('map').setView([37.7749, -122.4194], 10); // Set initial view to San Francisco
+        if (map) return;  // If map already exists, don't initialize again
+        console.log('Initializing map...');
+        map = L.map('map').setView([37.7749, -122.4194], 10);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
+        console.log('Map initialized:', map);
     }
 
     initMap();
 
     toggleBtn.addEventListener('click', function() {
         sidebar.classList.toggle('expanded');
+        setTimeout(() => {
+            if (map) {
+                map.invalidateSize();
+                console.log('Map size updated after sidebar toggle');
+            }
+        }, 300);
     });
 
-    // Filter functionality
     applyFiltersBtn.addEventListener('click', function() {
         fetchFilteredTrips();
     });
@@ -44,13 +51,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const driver = driverFilter.value;
 
         fetch(`/get_filtered_trips?status=${status}&date_range=${dateRange}&driver=${driver}`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(trips => {
                 updateFilteredTripsList(trips);
                 updateAllTripsList(trips);
                 updateMapMarkers(trips);
             })
-            .catch(error => console.error('Error fetching filtered trips:', error));
+            .catch(error => {
+                console.error('Error fetching filtered trips:', error);
+                alert('An error occurred while fetching trip data. Please try again.');
+            });
     }
 
     function updateFilteredTripsList(trips) {
@@ -85,7 +100,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateMapMarkers(trips) {
-        // Clear existing markers
         markers.forEach(marker => map.removeLayer(marker));
         markers = [];
 
@@ -102,7 +116,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Adjust map view to fit all markers
         if (markers.length > 0) {
             const group = new L.featureGroup(markers);
             map.fitBounds(group.getBounds().pad(0.1));
@@ -201,7 +214,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Initial load
     fetchFilteredTrips();
     fetchDrivers();
 
@@ -217,8 +229,9 @@ document.addEventListener('DOMContentLoaded', function() {
         fetchFilteredTrips();
     });
 
-    // Resize map when window is resized
     window.addEventListener('resize', function() {
-        map.invalidateSize();
+        if (map) {
+            map.invalidateSize();
+        }
     });
 });

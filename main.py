@@ -128,6 +128,8 @@ def get_filtered_trips():
         for trip in trips
     ]
     
+    app.logger.debug(f"Sending trip data to frontend: {trip_list}")
+    
     return jsonify(trip_list)
 
 @app.route('/driver_dashboard')
