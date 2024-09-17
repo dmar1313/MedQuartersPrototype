@@ -57,7 +57,14 @@
                     <option value="today">Today</option>
                     <option value="week">This Week</option>
                     <option value="month">This Month</option>
+                    <option value="custom">Custom Range</option>
                 </select>
+            </div>
+            <div id="custom-date-range" class="filter-group" style="display: none;">
+                <label for="start-date">Start Date:</label>
+                <input type="date" id="start-date" class="filter-input">
+                <label for="end-date">End Date:</label>
+                <input type="date" id="end-date" class="filter-input">
             </div>
             <div class="filter-group">
                 <label for="driver-filter">Driver:</label>
@@ -65,7 +72,14 @@
                     <option value="all">All Drivers</option>
                 </select>
             </div>
+            <div class="filter-group">
+                <label for="passenger-filter">Passenger:</label>
+                <select id="passenger-filter" class="filter-select">
+                    <option value="all">All Passengers</option>
+                </select>
+            </div>
             <button id="apply-filters" class="filter-btn">Apply Filters</button>
+            <button id="reset-filters" class="filter-btn">Reset Filters</button>
         </div>
 
         <div class="grid-item all-trips">
@@ -80,6 +94,7 @@
                             <th>Dropoff Location</th>
                             <th>Status</th>
                             <th>Driver</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="trip-list">
@@ -91,6 +106,10 @@
                             <td>{{ trip.dropoff_location }}</td>
                             <td>{{ trip.status }}</td>
                             <td>{{ trip.driver.username if trip.driver else 'Unassigned' }}</td>
+                            <td>
+                                <button class="edit-trip-btn" data-trip-id="{{ trip.id }}">Edit</button>
+                                <button class="delete-trip-btn" data-trip-id="{{ trip.id }}">Delete</button>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>

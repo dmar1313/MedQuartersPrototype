@@ -1,8 +1,13 @@
 document.addEventListener('DOMContentLoaded', function() {
     const statusFilter = document.getElementById('status-filter');
     const dateRangeFilter = document.getElementById('date-range-filter');
+    const customDateRange = document.getElementById('custom-date-range');
+    const startDate = document.getElementById('start-date');
+    const endDate = document.getElementById('end-date');
     const driverFilter = document.getElementById('driver-filter');
+    const passengerFilter = document.getElementById('passenger-filter');
     const applyFiltersBtn = document.getElementById('apply-filters');
+    const resetFiltersBtn = document.getElementById('reset-filters');
     const filteredTripsList = document.getElementById('filtered-trips-list');
     const tripList = document.getElementById('trip-list');
     const addTripBtn = document.getElementById('add-trip-btn');
@@ -20,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let markers = [];
 
     function initMap() {
-        if (map) return;  // If map already exists, don't initialize again
+        if (map) return;
         console.log('Initializing map...');
         map = L.map('map').setView([37.7749, -122.4194], 10);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -41,7 +46,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 300);
     });
 
+    dateRangeFilter.addEventListener('change', function() {
+        if (this.value === 'custom') {
+            customDateRange.style.display = 'block';
+        } else {
+            customDateRange.style.display = 'none';
+        }
+    });
+
     applyFiltersBtn.addEventListener('click', function() {
+        fetchFilteredTrips();
+    });
+
+    resetFiltersBtn.addEventListener('click', function() {
+        statusFilter.value = 'All';
+        dateRangeFilter.value = 'all';
+        customDateRange.style.display = 'none';
+        startDate.value = '';
+        endDate.value = '';
+        driverFilter.value = 'all';
+        passengerFilter.value = 'all';
         fetchFilteredTrips();
     });
 
@@ -49,8 +73,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const status = statusFilter.value;
         const dateRange = dateRangeFilter.value;
         const driver = driverFilter.value;
+        const passenger = passengerFilter.value;
+        let startDateValue = '';
+        let endDateValue = '';
 
-        fetch(`/get_filtered_trips?status=${status}&date_range=${dateRange}&driver=${driver}`)
+        if (dateRange === 'custom') {
+            startDateValue = startDate.value;
+            endDateValue = endDate.value;
+        }
+
+        fetch(`/get_filtered_trips?status=${status}&date_range=${dateRange}&driver=${driver}&passenger=${passenger}&start_date=${startDateValue}&end_date=${endDateValue}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
@@ -94,9 +126,51 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${trip.dropoff_location}</td>
                 <td>${trip.status}</td>
                 <td>${trip.driver}</td>
+                <td>
+                    <button class="edit-trip-btn" data-trip-id="${trip.id}">Edit</button>
+                    <button class="delete-trip-btn" data-trip-id="${trip.id}">Delete</button>
+                </td>
             `;
             tripList.appendChild(row);
         });
+        addTripEventListeners();
+    }
+
+    function addTripEventListeners() {
+        document.querySelectorAll('.edit-trip-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tripId = this.getAttribute('data-trip-id');
+                editTrip(tripId);
+            });
+        });
+
+        document.querySelectorAll('.delete-trip-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tripId = this.getAttribute('data-trip-id');
+                deleteTrip(tripId);
+            });
+        });
+    }
+
+    function editTrip(tripId) {
+        // Implement edit trip functionality
+        console.log(`Editing trip ${tripId}`);
+        // You can open a modal or navigate to an edit page
+    }
+
+    function deleteTrip(tripId) {
+        if (confirm('Are you sure you want to delete this trip?')) {
+            fetch(`/delete_trip/${tripId}`, { method: 'DELETE' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        fetchFilteredTrips();
+                    } else {
+                        alert('Error deleting trip: ' + data.error);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
     }
 
     function updateMapMarkers(trips) {
@@ -188,6 +262,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 alert('Passenger added successfully!');
                 addPassengerForm.classList.add('hidden');
+                fetchPassengers();
             } else {
                 alert('Error adding passenger: ' + data.error);
             }
@@ -214,8 +289,28 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function fetchPassengers() {
+        fetch('/get_passengers')
+            .then(response => response.json())
+            .then(passengers => {
+                updatePassengerFilter(passengers);
+            })
+            .catch(error => console.error('Error fetching passengers:', error));
+    }
+
+    function updatePassengerFilter(passengers) {
+        passengerFilter.innerHTML = '<option value="all">All Passengers</option>';
+        passengers.forEach(passenger => {
+            const option = document.createElement('option');
+            option.value = passenger.id;
+            option.textContent = passenger.name;
+            passengerFilter.appendChild(option);
+        });
+    }
+
     fetchFilteredTrips();
     fetchDrivers();
+    fetchPassengers();
 
     socket.on('connect', function() {
         socket.emit('join', {room: 'dispatchers'});

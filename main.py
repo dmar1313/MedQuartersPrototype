@@ -12,7 +12,7 @@ app = Flask(__name__)
 app.config.from_object('config.Config')
 db.init_app(app)
 login_manager = LoginManager(app)
-login_manager.login_view = 'login'
+login_manager.login_view = 'login'  # type: ignore
 socketio = SocketIO(app)
 
 @login_manager.user_loader
@@ -35,7 +35,7 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
-        if user and check_password_hash(user.password_hash, form.password.data):
+        if user and form.password.data and check_password_hash(user.password_hash, form.password.data):
             login_user(user)
             app.logger.info(f"User {user.username} logged in successfully")
             next_page = request.args.get('next')
@@ -59,7 +59,9 @@ def signup():
         return redirect(url_for('index'))
     form = SignUpForm()
     if form.validate_on_submit():
-        user = User(username=form.username.data, role=form.role.data)
+        user = User()
+        user.username = form.username.data
+        user.role = form.role.data
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
@@ -90,6 +92,9 @@ def get_filtered_trips():
     status = request.args.get('status', 'All')
     date_range = request.args.get('date_range', 'all')
     driver_id = request.args.get('driver', 'all')
+    passenger_id = request.args.get('passenger', 'all')
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
     
     query = Trip.query
 
@@ -106,9 +111,17 @@ def get_filtered_trips():
         elif date_range == 'month':
             start_of_month = today.replace(day=1)
             query = query.filter(Trip.pickup_time >= start_of_month)
+        elif date_range == 'custom':
+            if start_date and end_date:
+                start = datetime.strptime(start_date, '%Y-%m-%d').date()
+                end = datetime.strptime(end_date, '%Y-%m-%d').date()
+                query = query.filter(Trip.pickup_time >= start, Trip.pickup_time <= end)
 
     if driver_id != 'all':
         query = query.filter_by(driver_id=driver_id)
+
+    if passenger_id != 'all':
+        query = query.filter_by(patient_name=passenger_id)  # Assuming patient_name is used for passengers
 
     trips = query.all()
     
@@ -149,21 +162,24 @@ def create_trip():
     if form.validate_on_submit():
         try:
             pickup_time = form.pickup_time.data
-            if isinstance(pickup_time, str):
-                pickup_time = datetime.strptime(pickup_time, '%Y-%m-%dT%H:%M')
-            pickup_time_utc = pickup_time.replace(tzinfo=pytz.UTC)
-            
-            trip = Trip(
-                patient_name=form.patient_name.data,
-                pickup_location=form.pickup_location.data,
-                dropoff_location=form.dropoff_location.data,
-                pickup_time=pickup_time_utc,
-                status='Unassigned'
-            )
-            db.session.add(trip)
-            db.session.commit()
-            socketio.emit('new_trip', {'trip_id': trip.id, 'patient_name': trip.patient_name}, room='drivers')
-            return jsonify({'success': True, 'trip_id': trip.id})
+            if pickup_time:
+                if isinstance(pickup_time, str):
+                    pickup_time = datetime.strptime(pickup_time, '%Y-%m-%dT%H:%M')
+                pickup_time_utc = pickup_time.replace(tzinfo=pytz.UTC)
+                
+                trip = Trip()
+                trip.patient_name = form.patient_name.data
+                trip.pickup_location = form.pickup_location.data
+                trip.dropoff_location = form.dropoff_location.data
+                trip.pickup_time = pickup_time_utc
+                trip.status = 'Unassigned'
+                
+                db.session.add(trip)
+                db.session.commit()
+                socketio.emit('new_trip', {'trip_id': trip.id, 'patient_name': trip.patient_name}, to='drivers')
+                return jsonify({'success': True, 'trip_id': trip.id})
+            else:
+                return jsonify({'error': 'Invalid pickup time'}), 400
         except Exception as e:
             db.session.rollback()
             error_msg = f'Error creating trip: {str(e)}'
@@ -183,7 +199,9 @@ def add_driver():
     if not name or not phone or not email:
         return jsonify({'error': 'Missing required fields'}), 400
     try:
-        new_driver = User(username=name, role='driver')
+        new_driver = User()
+        new_driver.username = name
+        new_driver.role = 'driver'
         new_driver.set_password(email)  # Use email as temporary password
         db.session.add(new_driver)
         db.session.commit()
@@ -223,11 +241,30 @@ def get_drivers():
 def get_passengers():
     if current_user.role != 'dispatcher':
         return jsonify({'error': 'Unauthorized'}), 403
+    # In a real application, you would fetch this from the database
     mock_passengers = [
         {'id': 1, 'name': 'John Doe', 'phone': '123-456-7890'},
         {'id': 2, 'name': 'Jane Smith', 'phone': '098-765-4321'}
     ]
     return jsonify(mock_passengers)
+
+@app.route('/delete_trip/<int:trip_id>', methods=['DELETE'])
+@login_required
+def delete_trip(trip_id):
+    if current_user.role != 'dispatcher':
+        return jsonify({'error': 'Unauthorized'}), 403
+    try:
+        trip = Trip.query.get(trip_id)
+        if trip:
+            db.session.delete(trip)
+            db.session.commit()
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': 'Trip not found'}), 404
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error deleting trip: {str(e)}")
+        return jsonify({'error': f'Error deleting trip: {str(e)}'}), 500
 
 @app.route('/reporting_dashboard')
 @login_required
@@ -248,4 +285,4 @@ def check_users():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True, use_reloader=True, log_output=True)
