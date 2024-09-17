@@ -25,5 +25,4 @@ class TripForm(FlaskForm):
     pickup_location = StringField('Pickup Location', validators=[DataRequired()])
     dropoff_location = StringField('Dropoff Location', validators=[DataRequired()])
     pickup_time = DateTimeField('Pickup Time', validators=[DataRequired()], format='%Y-%m-%d %H:%M')
-    driver_id = SelectField('Assign Driver', coerce=int, validators=[DataRequired()])
     submit = SubmitField('Create Trip')

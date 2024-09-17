@@ -21,7 +21,7 @@ class Trip(db.Model):
     dropoff_location = db.Column(db.String(200), nullable=False)
     pickup_time = db.Column(db.DateTime, nullable=False)
     status = db.Column(db.String(20), default='Unassigned')
-    driver_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    driver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Signature(db.Model):

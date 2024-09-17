@@ -1,20 +1,21 @@
 [tool.poetry]
-name = "repl-nix-medquarters-nemt-app"
+name = "medquarters-nemt-app"
 version = "0.1.0"
-description = ""
+description = "A NEMT app using Flask and Vanilla JS with role-based access for dispatchers and drivers"
 authors = ["Your Name <you@example.com>"]
-readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
-flask = "^3.0.3"
-flask-wtf = "^1.2.1"
-flask-sqlalchemy = "^3.1.1"
-flask-login = "^0.6.3"
-psycopg2-binary = "^2.9.9"
-flask-socketio = "^5.3.7"
+python = "^3.8"
+flask = "^2.0.1"
+flask-sqlalchemy = "^2.5.1"
+flask-login = "^0.5.0"
+flask-wtf = "^0.15.1"
+flask-socketio = "^5.1.1"
+werkzeug = "^2.0.1"
+pytz = "^2021.1"
 
+[tool.poetry.dev-dependencies]
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"

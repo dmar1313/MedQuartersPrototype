@@ -7,6 +7,9 @@ from config import Config
 from flask_socketio import SocketIO, emit, join_room
 from urllib.parse import urlparse
 import os
+from sqlalchemy import func
+from datetime import datetime, timedelta
+import pytz
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -27,6 +30,7 @@ def index():
         return redirect(url_for('dispatcher_dashboard'))
     elif current_user.role == 'driver':
         return redirect(url_for('driver_dashboard'))
+    return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -62,7 +66,7 @@ def signup():
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('login'))
+    return redirect(url_for('index'))
 
 @app.route('/dispatcher_dashboard')
 @login_required
@@ -70,10 +74,41 @@ def dispatcher_dashboard():
     if current_user.role != 'dispatcher':
         return redirect(url_for('index'))
     form = TripForm()
-    drivers = User.query.filter_by(role='driver').all()
-    form.driver_id.choices = [(d.id, d.username) for d in drivers]
     trips = Trip.query.all()
-    return render_template('dispatcher_dashboard.html', form=form, drivers=drivers, trips=trips)
+    
+    statuses = ['All', 'Unassigned', 'Assigned', 'Enroute', 'Onboard', 'Complete', 'Canceled']
+    
+    return render_template('dispatcher_dashboard.html', 
+                           form=form, 
+                           trips=trips,
+                           statuses=statuses)
+
+@app.route('/get_filtered_trips')
+@login_required
+def get_filtered_trips():
+    if current_user.role != 'dispatcher':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    status = request.args.get('status', 'All')
+    
+    if status == 'All':
+        trips = Trip.query.all()
+    else:
+        trips = Trip.query.filter_by(status=status).all()
+    
+    trip_list = [
+        {
+            'id': trip.id,
+            'patient_name': trip.patient_name,
+            'pickup_location': trip.pickup_location,
+            'dropoff_location': trip.dropoff_location,
+            'status': trip.status,
+            'driver': trip.driver.username if trip.driver else 'Unassigned'
+        }
+        for trip in trips
+    ]
+    
+    return jsonify(trip_list)
 
 @app.route('/driver_dashboard')
 @login_required
@@ -89,64 +124,111 @@ def create_trip():
     if current_user.role != 'dispatcher':
         return jsonify({'error': 'Unauthorized'}), 403
     form = TripForm()
+    app.logger.info(f"Received form data: {request.form}")
+    
+    for field, value in request.form.items():
+        app.logger.info(f"Field: {field}, Value: {value}")
+    
     if form.validate_on_submit():
-        trip = Trip(
-            patient_name=form.patient_name.data,
-            pickup_location=form.pickup_location.data,
-            dropoff_location=form.dropoff_location.data,
-            pickup_time=form.pickup_time.data,
-            driver_id=form.driver_id.data
-        )
-        db.session.add(trip)
-        db.session.commit()
-        socketio.emit('new_trip', {'trip_id': trip.id, 'patient_name': trip.patient_name}, room=f'driver_{trip.driver_id}')
-        return jsonify({'success': True, 'trip_id': trip.id})
-    return jsonify({'error': 'Invalid form data'}), 400
+        try:
+            pickup_time = form.pickup_time.data
+            app.logger.info(f"Extracted pickup_time: {pickup_time}")
+            
+            if isinstance(pickup_time, str):
+                pickup_time = datetime.strptime(pickup_time, '%Y-%m-%dT%H:%M')
+            pickup_time_utc = pickup_time.replace(tzinfo=pytz.UTC)
+            
+            trip = Trip(
+                patient_name=form.patient_name.data,
+                pickup_location=form.pickup_location.data,
+                dropoff_location=form.dropoff_location.data,
+                pickup_time=pickup_time_utc,
+                status='Unassigned'
+            )
+            db.session.add(trip)
+            db.session.commit()
+            socketio.emit('new_trip', {'trip_id': trip.id, 'patient_name': trip.patient_name}, room='drivers')
+            return jsonify({'success': True, 'trip_id': trip.id})
+        except ValueError as e:
+            db.session.rollback()
+            error_msg = f'Invalid pickup time format. Please use YYYY-MM-DDTHH:MM format. Error: {str(e)}'
+            app.logger.error(f"Error creating trip: {error_msg}")
+            return jsonify({'error': error_msg}), 400
+        except Exception as e:
+            db.session.rollback()
+            error_msg = f'Error creating trip: {str(e)}'
+            app.logger.error(error_msg)
+            return jsonify({'error': error_msg}), 500
+    else:
+        app.logger.error(f"Form validation failed: {form.errors}")
+        return jsonify({'error': 'Invalid form data', 'form_errors': form.errors}), 400
 
-@app.route('/update_trip_status', methods=['POST'])
+@app.route('/add_driver', methods=['POST'])
 @login_required
-def update_trip_status():
-    if current_user.role != 'driver':
+def add_driver():
+    if current_user.role != 'dispatcher':
         return jsonify({'error': 'Unauthorized'}), 403
-    trip_id = request.json.get('trip_id')
-    new_status = request.json.get('status')
-    trip = Trip.query.get(trip_id)
-    if trip and trip.driver_id == current_user.id:
-        trip.status = new_status
+    name = request.form.get('driver-name')
+    phone = request.form.get('driver-phone')
+    email = request.form.get('driver-email')
+    if not name or not phone or not email:
+        return jsonify({'error': 'Missing required fields'}), 400
+    try:
+        new_driver = User(username=name, role='driver')
+        new_driver.set_password(email)  # Use email as temporary password
+        db.session.add(new_driver)
         db.session.commit()
-        socketio.emit('trip_status_update', {'trip_id': trip.id, 'status': new_status}, room='dispatchers')
-        return jsonify({'success': True})
-    return jsonify({'error': 'Invalid trip or unauthorized'}), 400
+        return jsonify({'success': True, 'driver_id': new_driver.id})
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error adding driver: {str(e)}")
+        return jsonify({'error': f'Error adding driver: {str(e)}'}), 500
 
-@app.route('/submit_signature', methods=['POST'])
+@app.route('/add_passenger', methods=['POST'])
 @login_required
-def submit_signature():
-    if current_user.role != 'driver':
+def add_passenger():
+    if current_user.role != 'dispatcher':
         return jsonify({'error': 'Unauthorized'}), 403
-    trip_id = request.json.get('trip_id')
-    signature_data = request.json.get('signature')
-    trip = Trip.query.get(trip_id)
-    if trip and trip.driver_id == current_user.id:
-        signature = Signature(trip_id=trip_id, signature_data=signature_data)
-        db.session.add(signature)
-        trip.status = 'Completed'
-        db.session.commit()
-        socketio.emit('trip_completed', {'trip_id': trip.id}, room='dispatchers')
-        return jsonify({'success': True})
-    return jsonify({'error': 'Invalid trip or unauthorized'}), 400
+    try:
+        name = request.form.get('passenger-name')
+        phone = request.form.get('passenger-phone')
+        address = request.form.get('passenger-address')
+        if not name or not phone or not address:
+            raise ValueError('Missing required fields')
+        return jsonify({'success': True, 'passenger_name': name})
+    except Exception as e:
+        app.logger.error(f"Error adding passenger: {str(e)}")
+        return jsonify({'error': f'Error adding passenger: {str(e)}'}), 500
 
-@socketio.on('connect')
-def handle_connect():
-    if current_user.is_authenticated:
-        if current_user.role == 'dispatcher':
-            join_room('dispatchers')
-        elif current_user.role == 'driver':
-            join_room(f'driver_{current_user.id}')
+@app.route('/get_drivers')
+@login_required
+def get_drivers():
+    if current_user.role != 'dispatcher':
+        return jsonify({'error': 'Unauthorized'}), 403
+    drivers = User.query.filter_by(role='driver').all()
+    driver_list = [{'id': driver.id, 'name': driver.username} for driver in drivers]
+    return jsonify(driver_list)
 
-@socketio.on('join')
-def on_join(data):
-    room = data['room']
-    join_room(room)
+@app.route('/get_passengers')
+@login_required
+def get_passengers():
+    if current_user.role != 'dispatcher':
+        return jsonify({'error': 'Unauthorized'}), 403
+    mock_passengers = [
+        {'id': 1, 'name': 'John Doe', 'phone': '123-456-7890'},
+        {'id': 2, 'name': 'Jane Smith', 'phone': '098-765-4321'}
+    ]
+    return jsonify(mock_passengers)
+
+@app.route('/reporting_dashboard')
+@login_required
+def reporting_dashboard():
+    if current_user.role != 'dispatcher':
+        return redirect(url_for('index'))
+    
+    statuses = ['All', 'Unassigned', 'Assigned', 'Enroute', 'Onboard', 'Complete', 'Canceled']
+    
+    return render_template('reporting_dashboard.html', statuses=statuses)
 
 if __name__ == '__main__':
     with app.app_context():
