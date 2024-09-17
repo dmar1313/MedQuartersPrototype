@@ -108,7 +108,7 @@
 /* Filter Bar */
 .filter-bar {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     background-color: #ffffff;
     padding: 10px;
@@ -217,5 +217,14 @@
 
     .sidebar.expanded {
         height: auto;
+    }
+
+    .filter-bar {
+        flex-wrap: wrap;
+    }
+
+    .filter-select,
+    .filter-btn {
+        margin-bottom: 10px;
     }
 }

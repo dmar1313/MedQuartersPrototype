@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize the map
     function initMap() {
-        map = L.map('map').setView([0, 0], 2);
+        map = L.map('map').setView([37.7749, -122.4194], 10); // Set initial view to San Francisco
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
@@ -215,5 +215,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     socket.on('trip_completed', function(data) {
         fetchFilteredTrips();
+    });
+
+    // Resize map when window is resized
+    window.addEventListener('resize', function() {
+        map.invalidateSize();
     });
 });
