@@ -1,19 +1,15 @@
-from flask import Flask, render_template, redirect, url_for, request, jsonify, flash
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-from werkzeug.security import check_password_hash, generate_password_hash
-from models import db, User, Trip, Signature
+from werkzeug.security import check_password_hash
+from models import db, User, Trip
 from forms import LoginForm, SignUpForm, TripForm
-from config import Config
 from flask_socketio import SocketIO, emit, join_room
-from urllib.parse import urlparse
-import os
-from sqlalchemy import func
 from datetime import datetime, timedelta
 import pytz
+import random  # For generating random coordinates (remove in production)
 
 app = Flask(__name__)
-app.config.from_object(Config)
-
+app.config.from_object('config.Config')
 db.init_app(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -24,12 +20,12 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 @app.route('/')
-@login_required
 def index():
-    if current_user.role == 'dispatcher':
-        return redirect(url_for('dispatcher_dashboard'))
-    elif current_user.role == 'driver':
-        return redirect(url_for('driver_dashboard'))
+    if current_user.is_authenticated:
+        if current_user.role == 'dispatcher':
+            return redirect(url_for('dispatcher_dashboard'))
+        elif current_user.role == 'driver':
+            return redirect(url_for('driver_dashboard'))
     return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -41,12 +37,21 @@ def login():
         user = User.query.filter_by(username=form.username.data).first()
         if user and check_password_hash(user.password_hash, form.password.data):
             login_user(user)
+            app.logger.info(f"User {user.username} logged in successfully")
             next_page = request.args.get('next')
-            if not next_page or urlparse(next_page).netloc != '':
+            if not next_page or not next_page.startswith('/'):
                 next_page = url_for('index')
             return redirect(next_page)
-        flash('Invalid username or password')
+        else:
+            app.logger.warning(f"Failed login attempt for username: {form.username.data}")
+            flash('Invalid username or password')
     return render_template('login.html', form=form)
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -58,15 +63,8 @@ def signup():
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
-        flash('Congratulations, you are now a registered user!')
         return redirect(url_for('login'))
     return render_template('signup.html', form=form)
-
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for('index'))
 
 @app.route('/dispatcher_dashboard')
 @login_required
@@ -90,11 +88,29 @@ def get_filtered_trips():
         return jsonify({'error': 'Unauthorized'}), 403
     
     status = request.args.get('status', 'All')
+    date_range = request.args.get('date_range', 'all')
+    driver_id = request.args.get('driver', 'all')
     
-    if status == 'All':
-        trips = Trip.query.all()
-    else:
-        trips = Trip.query.filter_by(status=status).all()
+    query = Trip.query
+
+    if status != 'All':
+        query = query.filter_by(status=status)
+
+    if date_range != 'all':
+        today = datetime.now(pytz.UTC).date()
+        if date_range == 'today':
+            query = query.filter(Trip.pickup_time >= today)
+        elif date_range == 'week':
+            start_of_week = today - timedelta(days=today.weekday())
+            query = query.filter(Trip.pickup_time >= start_of_week)
+        elif date_range == 'month':
+            start_of_month = today.replace(day=1)
+            query = query.filter(Trip.pickup_time >= start_of_month)
+
+    if driver_id != 'all':
+        query = query.filter_by(driver_id=driver_id)
+
+    trips = query.all()
     
     trip_list = [
         {
@@ -103,7 +119,11 @@ def get_filtered_trips():
             'pickup_location': trip.pickup_location,
             'dropoff_location': trip.dropoff_location,
             'status': trip.status,
-            'driver': trip.driver.username if trip.driver else 'Unassigned'
+            'driver': trip.driver.username if trip.driver else 'Unassigned',
+            'pickup_lat': random.uniform(25, 49),  # Replace with actual data in production
+            'pickup_lon': random.uniform(-125, -65),  # Replace with actual data in production
+            'dropoff_lat': random.uniform(25, 49),  # Replace with actual data in production
+            'dropoff_lon': random.uniform(-125, -65)  # Replace with actual data in production
         }
         for trip in trips
     ]
@@ -124,16 +144,9 @@ def create_trip():
     if current_user.role != 'dispatcher':
         return jsonify({'error': 'Unauthorized'}), 403
     form = TripForm()
-    app.logger.info(f"Received form data: {request.form}")
-    
-    for field, value in request.form.items():
-        app.logger.info(f"Field: {field}, Value: {value}")
-    
     if form.validate_on_submit():
         try:
             pickup_time = form.pickup_time.data
-            app.logger.info(f"Extracted pickup_time: {pickup_time}")
-            
             if isinstance(pickup_time, str):
                 pickup_time = datetime.strptime(pickup_time, '%Y-%m-%dT%H:%M')
             pickup_time_utc = pickup_time.replace(tzinfo=pytz.UTC)
@@ -149,18 +162,12 @@ def create_trip():
             db.session.commit()
             socketio.emit('new_trip', {'trip_id': trip.id, 'patient_name': trip.patient_name}, room='drivers')
             return jsonify({'success': True, 'trip_id': trip.id})
-        except ValueError as e:
-            db.session.rollback()
-            error_msg = f'Invalid pickup time format. Please use YYYY-MM-DDTHH:MM format. Error: {str(e)}'
-            app.logger.error(f"Error creating trip: {error_msg}")
-            return jsonify({'error': error_msg}), 400
         except Exception as e:
             db.session.rollback()
             error_msg = f'Error creating trip: {str(e)}'
             app.logger.error(error_msg)
             return jsonify({'error': error_msg}), 500
     else:
-        app.logger.error(f"Form validation failed: {form.errors}")
         return jsonify({'error': 'Invalid form data', 'form_errors': form.errors}), 400
 
 @app.route('/add_driver', methods=['POST'])
@@ -230,7 +237,13 @@ def reporting_dashboard():
     
     return render_template('reporting_dashboard.html', statuses=statuses)
 
+@app.route('/check_users')
+def check_users():
+    users = User.query.all()
+    user_list = [{'id': user.id, 'username': user.username, 'role': user.role} for user in users]
+    return jsonify(user_list)
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    socketio.run(app, host='0.0.0.0', port=5000)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)

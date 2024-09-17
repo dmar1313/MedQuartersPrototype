@@ -1,0 +1,65 @@
+<!-- Pop-up forms -->
+<div id="add-trip-form" class="popup-form hidden">
+    <button class="close-btn">&times;</button>
+    <h3>Add Trip</h3>
+    <form id="trip-form">
+        {{ form.hidden_tag() }}
+        <div>
+            {{ form.patient_name.label }}
+            {{ form.patient_name(class="form-input") }}
+        </div>
+        <div>
+            {{ form.pickup_location.label }}
+            {{ form.pickup_location(class="form-input") }}
+        </div>
+        <div>
+            {{ form.dropoff_location.label }}
+            {{ form.dropoff_location(class="form-input") }}
+        </div>
+        <div>
+            {{ form.pickup_time.label }}
+            {{ form.pickup_time(class="form-input", type="datetime-local") }}
+        </div>
+        <button type="submit" class="submit-btn">Create Trip</button>
+    </form>
+</div>
+
+<div id="add-driver-form" class="popup-form hidden">
+    <button class="close-btn">&times;</button>
+    <h3>Add Driver</h3>
+    <form id="driver-form">
+        <div>
+            <label for="driver-name">Driver Name</label>
+            <input type="text" id="driver-name" name="driver-name" class="form-input" required>
+        </div>
+        <div>
+            <label for="driver-phone">Phone Number</label>
+            <input type="tel" id="driver-phone" name="driver-phone" class="form-input" required>
+        </div>
+        <div>
+            <label for="driver-email">Email</label>
+            <input type="email" id="driver-email" name="driver-email" class="form-input" required>
+        </div>
+        <button type="submit" class="submit-btn">Add Driver</button>
+    </form>
+</div>
+
+<div id="add-passenger-form" class="popup-form hidden">
+    <button class="close-btn">&times;</button>
+    <h3>Add Passenger</h3>
+    <form id="passenger-form">
+        <div>
+            <label for="passenger-name">Passenger Name</label>
+            <input type="text" id="passenger-name" name="passenger-name" class="form-input" required>
+        </div>
+        <div>
+            <label for="passenger-phone">Phone Number</label>
+            <input type="tel" id="passenger-phone" name="passenger-phone" class="form-input" required>
+        </div>
+        <div>
+            <label for="passenger-address">Address</label>
+            <input type="text" id="passenger-address" name="passenger-address" class="form-input" required>
+        </div>
+        <button type="submit" class="submit-btn">Add Passenger</button>
+    </form>
+</div>

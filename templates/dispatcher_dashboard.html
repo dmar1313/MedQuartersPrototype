@@ -1,172 +1,94 @@
 {% extends "base.html" %}
 
+{% block head %}
+    {{ super() }}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+{% endblock %}
+
 {% block content %}
 <div class="dispatcher-dashboard">
-    <div class="menu-column">
-        <button id="toggle-menu" class="toggle-menu-btn">☰</button>
-        <div class="menu-content">
-            <button id="add-trip-btn" class="menu-btn">Add Trip</button>
-            <button id="add-driver-btn" class="menu-btn">Add Driver</button>
-            <button id="add-passenger-btn" class="menu-btn">Add Passenger</button>
-            <a href="{{ url_for('reporting_dashboard') }}" class="menu-btn">Reporting Dashboard</a>
-        </div>
+    <div id="sidebar" class="sidebar">
+        <button id="toggleBtn" class="toggle-btn">&lt;&gt;</button>
+        <h2 class="sidebar-title">MedQuarters</h2>
+        <nav class="sidebar-nav">
+            <button id="add-trip-btn" class="sidebar-btn">Add Trip</button>
+            <button id="add-driver-btn" class="sidebar-btn">Add Driver</button>
+            <button id="add-passenger-btn" class="sidebar-btn">Add Passenger</button>
+            <a href="{{ url_for('reporting_dashboard') }}" class="sidebar-btn">Reporting Dashboard</a>
+        </nav>
     </div>
     <div class="main-content">
-        <h2 class="text-2xl font-bold mb-4">Dispatcher Dashboard</h2>
-        
-        <div class="top-section">
-            <div class="left-column">
-                <div class="reporting-dashboard">
-                    <h3 class="text-xl font-bold mb-2">Reporting Dashboard</h3>
-                    <div class="filter-section mb-4">
-                        <label for="status-filter" class="mr-2">Filter by Status:</label>
-                        <select id="status-filter" class="p-2 border rounded">
-                            {% for status in statuses %}
-                            <option value="{{ status }}">{{ status }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div id="filtered-trips-list" class="mb-4">
-                    <!-- Filtered trips will be displayed here -->
-                </div>
+        <header class="dashboard-header">
+            <h1>Dispatcher Dashboard</h1>
+            <div class="user-info">
+                <span>Welcome, {{ current_user.username }}</span>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
             </div>
-            <div class="center-column">
-                <div class="map-hub">
-                    <h3 class="text-xl font-bold mb-2">Live Map Hub</h3>
-                    <div class="map-placeholder">
-                        <img src="{{ url_for('static', filename='images/map_placeholder.png') }}" alt="Map Placeholder">
-                    </div>
+        </header>
+        
+        <div class="dashboard-grid">
+            <div class="grid-item reporting-dashboard">
+                <h2>Trip Summary</h2>
+                <div class="filter-bar">
+                    <select id="status-filter" class="filter-select">
+                        <option value="All">All Statuses</option>
+                        {% for status in statuses %}
+                            {% if status != 'All' %}
+                                <option value="{{ status }}">{{ status }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    <select id="date-range-filter" class="filter-select">
+                        <option value="all">All Dates</option>
+                        <option value="today">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                    </select>
+                    <select id="driver-filter" class="filter-select">
+                        <option value="all">All Drivers</option>
+                    </select>
+                    <button id="apply-filters" class="filter-btn">Apply Filters</button>
                 </div>
+                <div id="filtered-trips-list" class="filtered-trips-list"></div>
+            </div>
+            <div class="grid-item map-hub">
+                <h2>Live Map Hub</h2>
+                <div id="map" class="map-container"></div>
             </div>
         </div>
 
-        <div class="bottom-section">
-            <h3 class="text-xl font-bold mb-2">All Trips</h3>
-            <table class="w-full border-collapse border">
+        <div class="grid-item all-trips">
+            <h2>All Trips</h2>
+            <table class="trips-table">
                 <thead>
                     <tr>
-                        <th class="border p-2">ID</th>
-                        <th class="border p-2">Patient Name</th>
-                        <th class="border p-2">Pickup Location</th>
-                        <th class="border p-2">Dropoff Location</th>
-                        <th class="border p-2">Status</th>
-                        <th class="border p-2">Driver</th>
+                        <th>ID</th>
+                        <th>Patient Name</th>
+                        <th>Pickup Location</th>
+                        <th>Dropoff Location</th>
+                        <th>Status</th>
+                        <th>Driver</th>
                     </tr>
                 </thead>
                 <tbody id="trip-list">
                     {% for trip in trips %}
                     <tr>
-                        <td class="border p-2">{{ trip.id }}</td>
-                        <td class="border p-2">{{ trip.patient_name }}</td>
-                        <td class="border p-2">{{ trip.pickup_location }}</td>
-                        <td class="border p-2">{{ trip.dropoff_location }}</td>
-                        <td class="border p-2">{{ trip.status }}</td>
-                        <td class="border p-2">{{ trip.driver.username if trip.driver else 'Unassigned' }}</td>
+                        <td>{{ trip.id }}</td>
+                        <td>{{ trip.patient_name }}</td>
+                        <td>{{ trip.pickup_location }}</td>
+                        <td>{{ trip.dropoff_location }}</td>
+                        <td>{{ trip.status }}</td>
+                        <td>{{ trip.driver.username if trip.driver else 'Unassigned' }}</td>
                     </tr>
                     {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <div class="mt-8">
-            <h3 class="text-xl font-bold mb-2">Drivers</h3>
-            <table class="w-full border-collapse border">
-                <thead>
-                    <tr>
-                        <th class="border p-2">ID</th>
-                        <th class="border p-2">Name</th>
-                    </tr>
-                </thead>
-                <tbody id="driver-list">
-                    <!-- Driver list will be populated by JavaScript -->
-                </tbody>
-            </table>
-        </div>
-
-        <div class="mt-8">
-            <h3 class="text-xl font-bold mb-2">Passengers</h3>
-            <table class="w-full border-collapse border">
-                <thead>
-                    <tr>
-                        <th class="border p-2">ID</th>
-                        <th class="border p-2">Name</th>
-                        <th class="border p-2">Phone</th>
-                    </tr>
-                </thead>
-                <tbody id="passenger-list">
-                    <!-- Passenger list will be populated by JavaScript -->
                 </tbody>
             </table>
         </div>
     </div>
 </div>
 
-<!-- Pop-up forms -->
-<div id="add-trip-form" class="popup-form hidden">
-    <button class="close-btn">&times;</button>
-    <h3>Add Trip</h3>
-    <form id="trip-form">
-        {{ form.hidden_tag() }}
-        <div>
-            {{ form.patient_name.label }}
-            {{ form.patient_name(class="form-input") }}
-        </div>
-        <div>
-            {{ form.pickup_location.label }}
-            {{ form.pickup_location(class="form-input") }}
-        </div>
-        <div>
-            {{ form.dropoff_location.label }}
-            {{ form.dropoff_location(class="form-input") }}
-        </div>
-        <div>
-            {{ form.pickup_time.label }}
-            {{ form.pickup_time(class="form-input", type="datetime-local") }}
-        </div>
-        <button type="submit" class="submit-btn">Create Trip</button>
-    </form>
-</div>
-
-<div id="add-driver-form" class="popup-form hidden">
-    <button class="close-btn">&times;</button>
-    <h3>Add Driver</h3>
-    <form id="driver-form">
-        <div>
-            <label for="driver-name">Driver Name</label>
-            <input type="text" id="driver-name" name="driver-name" class="form-input" required>
-        </div>
-        <div>
-            <label for="driver-phone">Phone Number</label>
-            <input type="tel" id="driver-phone" name="driver-phone" class="form-input" required>
-        </div>
-        <div>
-            <label for="driver-email">Email</label>
-            <input type="email" id="driver-email" name="driver-email" class="form-input" required>
-        </div>
-        <button type="submit" class="submit-btn">Add Driver</button>
-    </form>
-</div>
-
-<div id="add-passenger-form" class="popup-form hidden">
-    <button class="close-btn">&times;</button>
-    <h3>Add Passenger</h3>
-    <form id="passenger-form">
-        <div>
-            <label for="passenger-name">Passenger Name</label>
-            <input type="text" id="passenger-name" name="passenger-name" class="form-input" required>
-        </div>
-        <div>
-            <label for="passenger-phone">Phone Number</label>
-            <input type="tel" id="passenger-phone" name="passenger-phone" class="form-input" required>
-        </div>
-        <div>
-            <label for="passenger-address">Address</label>
-            <input type="text" id="passenger-address" name="passenger-address" class="form-input" required>
-        </div>
-        <button type="submit" class="submit-btn">Add Passenger</button>
-    </form>
-</div>
+{% include "popup_forms.html" %}
 {% endblock %}
 
 {% block scripts %}
