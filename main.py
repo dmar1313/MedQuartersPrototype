@@ -68,8 +68,8 @@ def dispatcher_dashboard():
         flash('Access denied. You must be a dispatcher to view this page.')
         return redirect(url_for('index'))
     trips = Trip.query.all()
-    form = TripForm()  # Add this line
-    return render_template('dispatcher_dashboard.html', trips=trips, form=form)  # Update this line
+    form = TripForm()
+    return render_template('dispatcher_dashboard.html', trips=trips, form=form)
 
 @app.route('/driver_dashboard')
 @login_required
