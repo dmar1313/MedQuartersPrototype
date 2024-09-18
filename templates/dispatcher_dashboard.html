@@ -33,7 +33,90 @@
             </a>
         </nav>
     </div>
-    <!-- Rest of the content remains unchanged -->
+    <div class="main-content">
+        <div class="dashboard-header">
+            <h1>Dispatcher Dashboard</h1>
+            <div class="user-info">
+                Welcome, {{ current_user.username }}
+                <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+            </div>
+        </div>
+        <div class="filter-bar">
+            <div class="filter-group">
+                <label for="status-filter">Status:</label>
+                <select id="status-filter" class="filter-select">
+                    <option value="All">All</option>
+                    <option value="Unassigned">Unassigned</option>
+                    <option value="Assigned">Assigned</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="date-range-filter">Date Range:</label>
+                <select id="date-range-filter" class="filter-select">
+                    <option value="all">All</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                    <option value="custom">Custom</option>
+                </select>
+            </div>
+            <div class="filter-group" id="custom-date-range" style="display: none;">
+                <label for="start-date">Start Date:</label>
+                <input type="date" id="start-date" class="filter-input">
+                <label for="end-date">End Date:</label>
+                <input type="date" id="end-date" class="filter-input">
+            </div>
+            <div class="filter-group">
+                <label for="driver-filter">Driver:</label>
+                <select id="driver-filter" class="filter-select">
+                    <option value="all">All Drivers</option>
+                    <!-- Add driver options dynamically using JavaScript -->
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="passenger-filter">Passenger:</label>
+                <select id="passenger-filter" class="filter-select">
+                    <option value="all">All Passengers</option>
+                    <!-- Add passenger options dynamically using JavaScript -->
+                </select>
+            </div>
+            <button id="apply-filters-btn" class="filter-btn">Apply Filters</button>
+        </div>
+        <div class="dashboard-grid">
+            <div class="grid-item">
+                <h2>Map</h2>
+                <div id="map" class="map-container"></div>
+            </div>
+            <div class="grid-item">
+                <h2>Filtered Trips</h2>
+                <div id="filtered-trips-list" class="filtered-trips-list"></div>
+            </div>
+        </div>
+        <div class="grid-item">
+            <h2>All Trips</h2>
+            <div class="table-responsive">
+                <table class="trips-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Patient</th>
+                            <th>Pickup</th>
+                            <th>Dropoff</th>
+                            <th>Status</th>
+                            <th>Driver</th>
+                            <th>Pickup Time</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trip-list">
+                        <!-- Trip rows will be populated dynamically using JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
 {% include "popup_forms.html" %}

@@ -1,21 +1,49 @@
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM content loaded');
     const statusFilter = document.getElementById('status-filter');
     const dateRangeFilter = document.getElementById('date-range-filter');
     const driverFilter = document.getElementById('driver-filter');
     const passengerFilter = document.getElementById('passenger-filter');
     const filteredTripsList = document.getElementById('filtered-trips-list');
     const tripList = document.getElementById('trip-list');
+    const applyFiltersBtn = document.getElementById('apply-filters-btn');
+    const map = L.map('map').setView([40.7128, -74.0060], 10);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    console.log('Map initialized');
 
     // Add event listeners for filter changes
-    statusFilter.addEventListener('change', fetchFilteredTrips);
-    dateRangeFilter.addEventListener('change', fetchFilteredTrips);
-    driverFilter.addEventListener('change', fetchFilteredTrips);
-    passengerFilter.addEventListener('change', fetchFilteredTrips);
+    statusFilter.addEventListener('change', handleFilterChange);
+    dateRangeFilter.addEventListener('change', handleDateRangeChange);
+    driverFilter.addEventListener('change', handleFilterChange);
+    passengerFilter.addEventListener('change', handleFilterChange);
+    applyFiltersBtn.addEventListener('click', fetchFilteredTrips);
+
+    console.log('Event listeners added');
 
     // Call fetchFilteredTrips when the page loads
     fetchFilteredTrips();
 
+    function handleFilterChange() {
+        console.log('Filter changed');
+        fetchFilteredTrips();
+    }
+
+    function handleDateRangeChange() {
+        const customDateRange = document.getElementById('custom-date-range');
+        if (dateRangeFilter.value === 'custom') {
+            customDateRange.style.display = 'block';
+        } else {
+            customDateRange.style.display = 'none';
+        }
+        fetchFilteredTrips();
+    }
+
     function fetchFilteredTrips() {
+        console.log('Fetching filtered trips');
         const status = statusFilter.value;
         const dateRange = dateRangeFilter.value;
         const driver = driverFilter.value;
@@ -46,6 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateFilteredTripsList(trips) {
+        console.log('Updating filtered trips list');
         filteredTripsList.innerHTML = '';
         trips.forEach(trip => {
             const tripElement = document.createElement('div');
@@ -62,6 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateAllTripsList(trips) {
+        console.log('Updating all trips list');
         tripList.innerHTML = '';
         trips.forEach(trip => {
             const row = document.createElement('tr');
@@ -98,14 +128,66 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateMapMarkers(trips) {
-        // Implement map marker update logic here
+        console.log('Updating map markers');
+        map.eachLayer(layer => {
+            if (layer instanceof L.Marker) {
+                map.removeLayer(layer);
+            }
+        });
+
+        trips.forEach(trip => {
+            if (trip.pickup_lat && trip.pickup_lon) {
+                L.marker([trip.pickup_lat, trip.pickup_lon])
+                    .addTo(map)
+                    .bindPopup(`<b>${trip.patient_name}</b><br>Pickup: ${trip.pickup_location}`);
+            }
+            if (trip.dropoff_lat && trip.dropoff_lon) {
+                L.marker([trip.dropoff_lat, trip.dropoff_lon])
+                    .addTo(map)
+                    .bindPopup(`<b>${trip.patient_name}</b><br>Dropoff: ${trip.dropoff_location}`);
+            }
+        });
     }
 
     function showErrorMessage(message) {
-        // Implement error message display
         console.error(message);
         alert(message);
     }
 
-    // Add any additional functions needed for edit, delete, etc.
+    // Add functions for editing and deleting trips
+    function editTrip(tripId) {
+        console.log('Editing trip:', tripId);
+        // Implement edit trip functionality
+    }
+
+    function deleteTrip(tripId) {
+        console.log('Deleting trip:', tripId);
+        // Implement delete trip functionality
+    }
+
+    // Initialize sidebar functionality
+    const sidebar = document.getElementById('sidebar');
+    const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+    const addTripBtn = document.getElementById('add-trip-btn');
+    const addDriverBtn = document.getElementById('add-driver-btn');
+    const addPassengerBtn = document.getElementById('add-passenger-btn');
+
+    toggleSidebarBtn.addEventListener('click', function() {
+        sidebar.classList.toggle('expanded');
+    });
+
+    addTripBtn.addEventListener('click', function() {
+        console.log('Add trip button clicked');
+        // Implement add trip functionality
+    });
+
+    addDriverBtn.addEventListener('click', function() {
+        console.log('Add driver button clicked');
+        // Implement add driver functionality
+    });
+
+    addPassengerBtn.addEventListener('click', function() {
+        console.log('Add passenger button clicked');
+        // Implement add passenger functionality
+    });
 });
