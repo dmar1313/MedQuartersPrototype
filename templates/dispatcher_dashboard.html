@@ -4,27 +4,33 @@
     {{ super() }}
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin="anonymous"/>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 {% endblock %}
 
 {% block content %}
 <div class="dispatcher-dashboard">
-                <div id="sidebar" class="sidebar">
-                    <button id="toggleSidebarBtn" class="toggle-btn">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <nav class="sidebar-nav">
-                        <button id="add-trip-btn" class="sidebar-btn">
-                            <i class="fas fa-plus-circle"></i>
-                        </button>
-                        <button id="add-driver-btn" class="sidebar-btn">
-                            <i class="fas fa-user"></i>
-                        </button>
-                        <button id="add-passenger-btn" class="sidebar-btn">
-                            <i class="fas fa-users"></i>
-                        </button>
-                        <a href="{{ url_for('reporting_dashboard') }}" class="sidebar-btn">
-                            <i class="fas fa-chart-line"></i>
-Dashboard</a>
+    <div id="sidebar" class="sidebar">
+        <button id="toggleSidebarBtn" class="toggle-btn">
+            <i class="fas fa-bars"></i>
+        </button>
+        <nav class="sidebar-nav">
+            <button id="add-trip-btn" class="sidebar-btn">
+                <i class="fas fa-plus-circle"></i>
+                <span class="btn-text">Add Trip</span>
+            </button>
+            <button id="add-driver-btn" class="sidebar-btn">
+                <i class="fas fa-user"></i>
+                <span class="btn-text">Add Driver</span>
+            </button>
+            <button id="add-passenger-btn" class="sidebar-btn">
+                <i class="fas fa-users"></i>
+                <span class="btn-text">Add Passenger</span>
+            </button>
+            <a href="{{ url_for('reporting_dashboard') }}" class="sidebar-btn">
+                <i class="fas fa-chart-line"></i>
+                <span class="btn-text">Dashboard</span>
+            </a>
         </nav>
     </div>
     <div class="main-content">
@@ -36,17 +42,16 @@ Dashboard</a>
             </div>
         </header>
 
-                        <div class="dashboard-grid">
-                            <div class="grid-item map-hub">
-                                <h2>Live Map Hub</h2>
-                                <div id="map" class="map-container" style="height: 400px;"></div>
-                            </div>
-                            <div class="grid-item status-hub">
-                                <h2>Status Overview</h2>
-                                <!-- Add your content for the second grid area here -->
-                            </div>
-                        </div>
-
+        <div class="dashboard-grid">
+            <div class="grid-item map-hub">
+                <h2>Live Map Hub</h2>
+                <div id="map" class="map-container" style="height: 400px;"></div>
+            </div>
+            <div class="grid-item status-hub">
+                <h2>Status Overview</h2>
+                <!-- Add your content for the second grid area here -->
+            </div>
+        </div>
 
         <div class="filter-bar">
             <div class="filter-group">
@@ -84,11 +89,10 @@ Dashboard</a>
             </button>
         </div>
 
-
         <div class="grid-item all-trips">
             <h2>All Trips</h2>
             <div class="table-responsive">
- <table class="trips-table">
+                <table class="trips-table">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -122,7 +126,6 @@ Dashboard</a>
     </div>
 </div>
 
-
 {% include "popup_forms.html" %}
 {% endblock %}
 
@@ -134,88 +137,5 @@ Dashboard</a>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 
     <!-- Custom JS -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const sidebar = document.getElementById('sidebar');
-            const toggleBtn = document.getElementById('toggleSidebarBtn');
-            const mapContainer = document.getElementById('map');
-            let map;
-
-            // Initialize the map
-            function initMap() {
-                if (map) return; // Prevent multiple initializations
-
-                console.log('Initializing map...');
-                map = L.map(mapContainer).setView([37.7749, -122.4194], 10);  // Example: San Francisco
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                }).addTo(map);
-                console.log('Map initialized:', map);
-            }
-
-            // Toggle sidebar
-            toggleBtn.addEventListener('click', function() {
-                sidebar.classList.toggle('expanded');
-                setTimeout(() => {
-                    if (map) {
-                        map.invalidateSize(); // Resize map when sidebar is toggled
-                        console.log('Map size updated after sidebar toggle');
-                    }
-                }, 300);
-            });
-
-            // Other scripts related to filters, trips, and socket events go here
-
-        });
-    </script>
     <script src="{{ url_for('static', filename='js/dispatcher.js') }}"></script>
 {% endblock %}
-        </div>
-            <div class="grid-item trip-summary">
-                <h2>Trip Summary</h2>
-                <div id="filtered-trips-list" class="filtered-trips-list"></div>
-            </div>
-        </div>
-                        </a>
-                    </nav>
-                </div>        <div class="filter-bar">
-            <div class="filter-group">
-                <label for="status-filter">Status:</label>
-                <select id="status-filter" class="filter-select">
-                    <option value="All">All Statuses</option>
-                    <option value="Pending">Pending</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Completed">Completed</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label for="date-range-filter">Date Range:</label>
-                <select id="date-range-filter" class="filter-select">
-                    <option value="all">All Dates</option>
-                    <option value="today">Today</option>
-                    <option value="week">This Week</option>
-                    <option value="month">This Month</option>
-                    <option value="custom">Custom Range</option>
-                </select>
-            </div>
-            <div id="custom-date-range" class="filter-group" style="display: none;">
-                <label for="start-date">Start Date:</label>
-                <input type="date" id="start-date" class="filter-input">
-                <label for="end-date">End Date:</label>
-                <input type="date" id="end-date" class="filter-input">
-            </div>
-            <div class="filter-group">
-                <label for="driver-filter">Driver:</label>
-                <select id="driver-filter" class="filter-select">
-                    <option value="all">All Drivers</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label for="passenger-filter">Passenger:</label>
-                <select id="passenger-filter" class="filter-select">
-                    <option value="all">All Passengers</option>
-                </select>
-            </div>
-            <button id="apply-filters" class="filter-btn">Apply Filters</button>
-            <button id="reset-filters" class="filter-btn">Reset Filters</button>
-        </div>

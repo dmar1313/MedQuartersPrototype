@@ -1,18 +1,18 @@
 document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.getElementById('sidebar');
+    const toggleBtn = document.getElementById('toggleSidebarBtn');
+    const addTripBtn = document.getElementById('add-trip-btn');
+    const addDriverBtn = document.getElementById('add-driver-btn');
+    const addPassengerBtn = document.getElementById('add-passenger-btn');
+    const mapContainer = document.getElementById('map');
     const statusFilter = document.getElementById('status-filter');
     const dateRangeFilter = document.getElementById('date-range-filter');
-    const customDateRange = document.getElementById('custom-date-range');
-    const startDate = document.getElementById('start-date');
-    const endDate = document.getElementById('end-date');
     const driverFilter = document.getElementById('driver-filter');
     const passengerFilter = document.getElementById('passenger-filter');
     const applyFiltersBtn = document.getElementById('apply-filters');
     const resetFiltersBtn = document.getElementById('reset-filters');
     const filteredTripsList = document.getElementById('filtered-trips-list');
     const tripList = document.getElementById('trip-list');
-    const addTripBtn = document.getElementById('add-trip-btn');
-    const addDriverBtn = document.getElementById('add-driver-btn');
-    const addPassengerBtn = document.getElementById('add-passenger-btn');
     const socket = io();
 
     let map;
@@ -30,11 +30,11 @@ document.addEventListener('DOMContentLoaded', function() {
     initMap();
 
     // Toggle sidebar
-    document.getElementById('toggleSidebarBtn').addEventListener('click', function() {
-        document.getElementById('sidebar').classList.toggle('expanded');
+    toggleBtn.addEventListener('click', function() {
+        sidebar.classList.toggle('expanded');
         setTimeout(() => {
             if (map) {
-                map.invalidateSize(); // Resize map when sidebar is toggled
+                map.invalidateSize();
             }
         }, 300);
     });
@@ -46,7 +46,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Filter functions (similar to what you had)
+    // Open pop-up forms
+    addTripBtn.addEventListener('click', function() {
+        openPopupForm('add-trip-form');
+    });
+
+    addDriverBtn.addEventListener('click', function() {
+        openPopupForm('add-driver-form');
+    });
+
+    addPassengerBtn.addEventListener('click', function() {
+        openPopupForm('add-passenger-form');
+    });
+
+    // Close pop-up forms
+    document.querySelectorAll('.close-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            closePopupForm(this.closest('.popup-form').id);
+        });
+    });
+
+    // Submit pop-up forms
+    document.getElementById('trip-form').addEventListener('submit', submitTripForm);
+    document.getElementById('driver-form').addEventListener('submit', submitDriverForm);
+    document.getElementById('passenger-form').addEventListener('submit', submitPassengerForm);
+
+    // Filter functions
     applyFiltersBtn.addEventListener('click', function() {
         fetchFilteredTrips();
     });
@@ -54,9 +79,6 @@ document.addEventListener('DOMContentLoaded', function() {
     resetFiltersBtn.addEventListener('click', function() {
         statusFilter.value = 'All';
         dateRangeFilter.value = 'all';
-        customDateRange.style.display = 'none';
-        startDate.value = '';
-        endDate.value = '';
         driverFilter.value = 'all';
         passengerFilter.value = 'all';
         fetchFilteredTrips();
@@ -67,15 +89,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const dateRange = dateRangeFilter.value;
         const driver = driverFilter.value;
         const passenger = passengerFilter.value;
-        let startDateValue = '';
-        let endDateValue = '';
 
-        if (dateRange === 'custom') {
-            startDateValue = startDate.value;
-            endDateValue = endDate.value;
-        }
-
-        fetch(`/get_filtered_trips?status=${status}&date_range=${dateRange}&driver=${driver}&passenger=${passenger}&start_date=${startDateValue}&end_date=${endDateValue}`)
+        fetch(`/get_filtered_trips?status=${status}&date_range=${dateRange}&driver=${driver}&passenger=${passenger}`)
             .then(response => response.json())
             .then(trips => {
                 updateFilteredTripsList(trips);
@@ -142,4 +157,57 @@ document.addEventListener('DOMContentLoaded', function() {
             map.fitBounds(group.getBounds().pad(0.1));
         }
     }
+
+    function openPopupForm(formId) {
+        document.getElementById(formId).classList.remove('hidden');
+        document.body.insertAdjacentHTML('beforeend', '<div class="overlay"></div>');
+    }
+
+    function closePopupForm(formId) {
+        document.getElementById(formId).classList.add('hidden');
+        document.querySelector('.overlay').remove();
+    }
+
+    function submitTripForm(event) {
+        event.preventDefault();
+        // Add logic to submit trip form data
+        closePopupForm('add-trip-form');
+    }
+
+    function submitDriverForm(event) {
+        event.preventDefault();
+        // Add logic to submit driver form data
+        closePopupForm('add-driver-form');
+    }
+
+    function submitPassengerForm(event) {
+        event.preventDefault();
+        // Add logic to submit passenger form data
+        closePopupForm('add-passenger-form');
+    }
+
+    // Socket.io event listeners
+    socket.on('connect', function() {
+        socket.emit('join', {room: 'dispatchers'});
+    });
+
+    socket.on('new_trip', function(data) {
+        // Handle new trip event
+        fetchFilteredTrips();
+    });
+
+    socket.on('trip_assigned', function(data) {
+        // Handle trip assigned event
+        fetchFilteredTrips();
+    });
+
+    socket.on('trip_started', function(data) {
+        // Handle trip started event
+        fetchFilteredTrips();
+    });
+
+    socket.on('trip_completed', function(data) {
+        // Handle trip completed event
+        fetchFilteredTrips();
+    });
 });
