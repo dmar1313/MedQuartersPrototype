@@ -7,6 +7,7 @@ import os
 from datetime import datetime, timedelta
 import pytz
 import random
+from urllib.parse import urlparse
 
 app = Flask(__name__)
 app.config.from_object('config.Config')
@@ -28,7 +29,55 @@ def index():
     else:
         return redirect(url_for('login'))
 
-# Existing routes and functions
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user and user.check_password(form.password.data):
+            login_user(user)
+            next_page = request.args.get('next')
+            if not next_page or urlparse(next_page).netloc != '':
+                next_page = url_for('index')
+            return redirect(next_page)
+        flash('Invalid username or password')
+    return render_template('login.html', form=form)
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    form = SignUpForm()
+    if form.validate_on_submit():
+        user = User(username=form.username.data, role=form.role.data)
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        flash('Congratulations, you are now a registered user!')
+        return redirect(url_for('login'))
+    return render_template('signup.html', form=form)
+
+@app.route('/dispatcher_dashboard')
+@login_required
+def dispatcher_dashboard():
+    if current_user.role != 'dispatcher':
+        flash('Access denied. You must be a dispatcher to view this page.')
+        return redirect(url_for('index'))
+    trips = Trip.query.all()
+    return render_template('dispatcher_dashboard.html', trips=trips)
+
+@app.route('/driver_dashboard')
+@login_required
+def driver_dashboard():
+    if current_user.role != 'driver':
+        flash('Access denied. You must be a driver to view this page.')
+        return redirect(url_for('index'))
+    trips = Trip.query.filter_by(driver_id=current_user.id).all()
+    return render_template('driver_dashboard.html', trips=trips)
 
 @app.route('/get_filtered_trips')
 @login_required
@@ -92,8 +141,6 @@ def get_filtered_trips():
     app.logger.debug(f"Sending trip data to frontend: {trip_list}")
     
     return jsonify(trip_list)
-
-# Add other existing routes and functions here
 
 if __name__ == '__main__':
     with app.app_context():
