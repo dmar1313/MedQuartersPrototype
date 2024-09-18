@@ -36,10 +36,10 @@ def login():
         user = User.query.filter_by(username=form.username.data).first()
         if user and user.check_password(form.password.data):
             login_user(user)
-            next_page = request.args.get('next')
-            if not next_page or urlparse(next_page).netloc != '':
-                next_page = url_for('index')
-            return redirect(next_page)
+            if user.role == 'dispatcher':
+                return redirect(url_for('dispatcher_dashboard'))
+            elif user.role == 'driver':
+                return redirect(url_for('driver_dashboard'))
         flash('Invalid username or password')
     return render_template('login.html', form=form)
 
@@ -78,6 +78,15 @@ def driver_dashboard():
         return redirect(url_for('index'))
     trips = Trip.query.filter_by(driver_id=current_user.id).all()
     return render_template('driver_dashboard.html', trips=trips)
+
+@app.route('/reporting_dashboard')
+@login_required
+def reporting_dashboard():
+    if current_user.role != 'dispatcher':
+        flash('Access denied. You must be a dispatcher to view this page.')
+        return redirect(url_for('index'))
+    # Add any necessary logic for the reporting dashboard
+    return render_template('reporting_dashboard.html')
 
 @app.route('/get_filtered_trips')
 @login_required
