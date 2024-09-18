@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('submit-signature').addEventListener('click', function() {
         if (signaturePad.isEmpty()) {
-            alert('Please provide a signature');
+            showErrorMessage('Please provide a signature');
             return;
         }
 
@@ -49,13 +49,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     tripElement.querySelector('.start-trip').classList.add('hidden');
                     tripElement.querySelector('.complete-trip').classList.remove('hidden');
                 }
+                showSuccessMessage(`Trip status updated to ${status}`);
             } else {
-                alert('Error updating trip status: ' + data.error);
+                showErrorMessage('Error updating trip status: ' + data.error);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while updating the trip status.');
+            showErrorMessage('An error occurred while updating the trip status.');
         });
     }
 
@@ -70,16 +71,16 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert('Trip completed successfully!');
+                showSuccessMessage('Trip completed successfully!');
                 signatureModal.classList.add('hidden');
                 location.reload(); // Reload the page to update the trip list
             } else {
-                alert('Error submitting signature: ' + data.error);
+                showErrorMessage('Error submitting signature: ' + data.error);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while submitting the signature.');
+            showErrorMessage('An error occurred while submitting the signature.');
         });
     }
 
@@ -93,13 +94,66 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function showSuccessMessage(message) {
+        // Implement success message display
+        alert(message);
+    }
+
+    function showErrorMessage(message) {
+        // Implement error message display
+        alert(message);
+    }
+
     socket.on('connect', function() {
         const driverId = document.body.dataset.driverId;
         socket.emit('join', {room: `driver_${driverId}`});
     });
 
     socket.on('new_trip', function(data) {
-        alert(`New trip assigned: Patient ${data.patient_name}`);
+        showSuccessMessage(`New trip assigned: Patient ${data.patient_name}`);
         location.reload(); // Reload the page to show the new trip
     });
+
+    // Add this function to refresh the trip list periodically
+    function refreshTripList() {
+        fetch('/get_driver_trips')
+            .then(response => response.json())
+            .then(trips => {
+                updateTripList(trips);
+            })
+            .catch(error => {
+                console.error('Error fetching trips:', error);
+                showErrorMessage('Failed to refresh trip list. Please try again.');
+            });
+    }
+
+    function updateTripList(trips) {
+        tripList.innerHTML = '';
+        trips.forEach(trip => {
+            const tripElement = document.createElement('li');
+            tripElement.classList.add('trip-item');
+            tripElement.dataset.tripId = trip.id;
+            tripElement.innerHTML = `
+                <div class="trip-details">
+                    <p><strong>Patient:</strong> ${trip.patient_name}</p>
+                    <p><strong>Pickup:</strong> ${trip.pickup_location}</p>
+                    <p><strong>Dropoff:</strong> ${trip.dropoff_location}</p>
+                    <p><strong>Time:</strong> ${new Date(trip.pickup_time).toLocaleString()}</p>
+                    <p><strong>Status:</strong> <span class="trip-status">${trip.status}</span></p>
+                </div>
+                <div class="trip-actions">
+                    ${trip.status === 'Assigned' ? '<button class="start-trip btn">Start Trip</button>' : ''}
+                    ${trip.status === 'In Progress' ? '<button class="complete-trip btn">Complete Trip</button>' : ''}
+                    <button class="navigate btn" data-address="${trip.pickup_location}">Navigate to Pickup</button>
+                </div>
+            `;
+            tripList.appendChild(tripElement);
+        });
+    }
+
+    // Refresh trip list every 30 seconds
+    setInterval(refreshTripList, 30000);
+
+    // Initial refresh
+    refreshTripList();
 });
