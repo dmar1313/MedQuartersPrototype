@@ -13,47 +13,40 @@ document.addEventListener('DOMContentLoaded', function() {
     const addTripBtn = document.getElementById('add-trip-btn');
     const addDriverBtn = document.getElementById('add-driver-btn');
     const addPassengerBtn = document.getElementById('add-passenger-btn');
-    const addTripForm = document.getElementById('add-trip-form');
-    const addDriverForm = document.getElementById('add-driver-form');
-    const addPassengerForm = document.getElementById('add-passenger-form');
-    const closeBtns = document.querySelectorAll('.close-btn');
-    const toggleBtn = document.getElementById('toggleBtn');
-    const sidebar = document.getElementById('sidebar');
     const socket = io();
-    
+
     let map;
     let markers = [];
 
+    // Initialize the map
     function initMap() {
         if (map) return;
-        console.log('Initializing map...');
-        map = L.map('map').setView([37.7749, -122.4194], 10);
+        map = L.map('map').setView([37.7749, -122.4194], 10);  // Example: San Francisco
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(map);
-        console.log('Map initialized:', map);
     }
 
     initMap();
 
-    toggleBtn.addEventListener('click', function() {
-        sidebar.classList.toggle('expanded');
+    // Toggle sidebar
+    document.getElementById('toggleSidebarBtn').addEventListener('click', function() {
+        document.getElementById('sidebar').classList.toggle('expanded');
         setTimeout(() => {
             if (map) {
-                map.invalidateSize();
-                console.log('Map size updated after sidebar toggle');
+                map.invalidateSize(); // Resize map when sidebar is toggled
             }
         }, 300);
     });
 
-    dateRangeFilter.addEventListener('change', function() {
-        if (this.value === 'custom') {
-            customDateRange.style.display = 'block';
-        } else {
-            customDateRange.style.display = 'none';
+    // Handle window resize for map adjustment
+    window.addEventListener('resize', function() {
+        if (map) {
+            map.invalidateSize();
         }
     });
 
+    // Filter functions (similar to what you had)
     applyFiltersBtn.addEventListener('click', function() {
         fetchFilteredTrips();
     });
@@ -83,21 +76,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         fetch(`/get_filtered_trips?status=${status}&date_range=${dateRange}&driver=${driver}&passenger=${passenger}&start_date=${startDateValue}&end_date=${endDateValue}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(trips => {
                 updateFilteredTripsList(trips);
                 updateAllTripsList(trips);
                 updateMapMarkers(trips);
             })
-            .catch(error => {
-                console.error('Error fetching filtered trips:', error);
-                alert('An error occurred while fetching trip data. Please try again.');
-            });
+            .catch(error => console.error('Error fetching filtered trips:', error));
     }
 
     function updateFilteredTripsList(trips) {
@@ -133,44 +118,6 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             tripList.appendChild(row);
         });
-        addTripEventListeners();
-    }
-
-    function addTripEventListeners() {
-        document.querySelectorAll('.edit-trip-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const tripId = this.getAttribute('data-trip-id');
-                editTrip(tripId);
-            });
-        });
-
-        document.querySelectorAll('.delete-trip-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const tripId = this.getAttribute('data-trip-id');
-                deleteTrip(tripId);
-            });
-        });
-    }
-
-    function editTrip(tripId) {
-        // Implement edit trip functionality
-        console.log(`Editing trip ${tripId}`);
-        // You can open a modal or navigate to an edit page
-    }
-
-    function deleteTrip(tripId) {
-        if (confirm('Are you sure you want to delete this trip?')) {
-            fetch(`/delete_trip/${tripId}`, { method: 'DELETE' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        fetchFilteredTrips();
-                    } else {
-                        alert('Error deleting trip: ' + data.error);
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-        }
     }
 
     function updateMapMarkers(trips) {
@@ -195,138 +142,4 @@ document.addEventListener('DOMContentLoaded', function() {
             map.fitBounds(group.getBounds().pad(0.1));
         }
     }
-
-    addTripBtn.addEventListener('click', () => toggleForm(addTripForm));
-    addDriverBtn.addEventListener('click', () => toggleForm(addDriverForm));
-    addPassengerBtn.addEventListener('click', () => toggleForm(addPassengerForm));
-
-    closeBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            btn.closest('.popup-form').classList.add('hidden');
-        });
-    });
-
-    function toggleForm(form) {
-        form.classList.toggle('hidden');
-    }
-
-    document.getElementById('trip-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        fetch('/create_trip', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Trip created successfully!');
-                addTripForm.classList.add('hidden');
-                fetchFilteredTrips();
-            } else {
-                alert('Error creating trip: ' + data.error);
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    });
-
-    document.getElementById('driver-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        fetch('/add_driver', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Driver added successfully!');
-                addDriverForm.classList.add('hidden');
-                fetchDrivers();
-            } else {
-                alert('Error adding driver: ' + data.error);
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    });
-
-    document.getElementById('passenger-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        fetch('/add_passenger', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Passenger added successfully!');
-                addPassengerForm.classList.add('hidden');
-                fetchPassengers();
-            } else {
-                alert('Error adding passenger: ' + data.error);
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    });
-
-    function fetchDrivers() {
-        fetch('/get_drivers')
-            .then(response => response.json())
-            .then(drivers => {
-                updateDriverFilter(drivers);
-            })
-            .catch(error => console.error('Error fetching drivers:', error));
-    }
-
-    function updateDriverFilter(drivers) {
-        driverFilter.innerHTML = '<option value="all">All Drivers</option>';
-        drivers.forEach(driver => {
-            const option = document.createElement('option');
-            option.value = driver.id;
-            option.textContent = driver.name;
-            driverFilter.appendChild(option);
-        });
-    }
-
-    function fetchPassengers() {
-        fetch('/get_passengers')
-            .then(response => response.json())
-            .then(passengers => {
-                updatePassengerFilter(passengers);
-            })
-            .catch(error => console.error('Error fetching passengers:', error));
-    }
-
-    function updatePassengerFilter(passengers) {
-        passengerFilter.innerHTML = '<option value="all">All Passengers</option>';
-        passengers.forEach(passenger => {
-            const option = document.createElement('option');
-            option.value = passenger.id;
-            option.textContent = passenger.name;
-            passengerFilter.appendChild(option);
-        });
-    }
-
-    fetchFilteredTrips();
-    fetchDrivers();
-    fetchPassengers();
-
-    socket.on('connect', function() {
-        socket.emit('join', {room: 'dispatchers'});
-    });
-
-    socket.on('trip_status_update', function(data) {
-        fetchFilteredTrips();
-    });
-
-    socket.on('trip_completed', function(data) {
-        fetchFilteredTrips();
-    });
-
-    window.addEventListener('resize', function() {
-        if (map) {
-            map.invalidateSize();
-        }
-    });
 });

@@ -1,0 +1,146 @@
+/* Driver Dashboard Styles */
+.driver-dashboard {
+    max-width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.dashboard-title {
+    font-size: 24px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.user-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.logout-btn {
+    background-color: #f44336;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.trip-list {
+    background-color: #f0f0f0;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.trip-list h2 {
+    font-size: 20px;
+    margin-bottom: 15px;
+}
+
+#trip-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.trip-item {
+    background-color: #ffffff;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.trip-details p {
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+.trip-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.btn {
+    flex: 1;
+    min-width: 120px;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.start-trip {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.complete-trip {
+    background-color: #2196F3;
+    color: white;
+}
+
+.navigate {
+    background-color: #FFC107;
+    color: black;
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 90%;
+    width: 300px;
+}
+
+.modal h3 {
+    font-size: 18px;
+    margin-bottom: 15px;
+}
+
+#signature-pad {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: space-between;
+}
+
+.hidden {
+    display: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .trip-actions {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+    }
+
+    .modal-content {
+        width: 90%;
+    }
+}

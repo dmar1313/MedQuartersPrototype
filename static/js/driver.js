@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (e.target.classList.contains('complete-trip')) {
             currentTripId = e.target.closest('li').dataset.tripId;
             signatureModal.classList.remove('hidden');
+        } else if (e.target.classList.contains('navigate')) {
+            const address = e.target.dataset.address;
+            openNavigation(address);
         }
     });
 
@@ -80,6 +83,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function openNavigation(address) {
+        const encodedAddress = encodeURIComponent(address);
+        
+        if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+            window.location.href = `maps://maps.apple.com/?q=${encodedAddress}`;
+        } else {
+            window.location.href = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+        }
+    }
+
     socket.on('connect', function() {
         const driverId = document.body.dataset.driverId;
         socket.emit('join', {room: `driver_${driverId}`});
@@ -89,24 +102,4 @@ document.addEventListener('DOMContentLoaded', function() {
         alert(`New trip assigned: Patient ${data.patient_name}`);
         location.reload(); // Reload the page to show the new trip
     });
-
-    // Add event listener for opening navigation app
-    tripList.addEventListener('click', function(e) {
-        if (e.target.classList.contains('navigate')) {
-            const address = e.target.dataset.address;
-            openNavigation(address);
-        }
-    });
-
-    function openNavigation(address) {
-        // Encode the address for use in the URL
-        const encodedAddress = encodeURIComponent(address);
-        
-        // Check if the device is iOS or Android and open the appropriate map app
-        if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-            window.location.href = `maps://maps.apple.com/?q=${encodedAddress}`;
-        } else {
-            window.location.href = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
-        }
-    }
 });
