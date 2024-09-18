@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const dateRangeFilter = document.getElementById('date-range-filter');
     const driverFilter = document.getElementById('driver-filter');
     const passengerFilter = document.getElementById('passenger-filter');
-    const filteredTripsList = document.getElementById('filtered-trips-list');
+    const currentTripsList = document.getElementById('current-trips-list');
     const tripList = document.getElementById('trip-list');
     const applyFiltersBtn = document.getElementById('apply-filters-btn');
     const map = L.map('map').setView([40.7128, -74.0060], 10);
@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!Array.isArray(trips)) {
                     throw new Error('Received data is not an array');
                 }
-                updateFilteredTripsList(trips);
+                updateCurrentTripsList(trips);
                 updateAllTripsList(trips);
                 updateMapMarkers(trips);
             })
@@ -89,12 +89,12 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    function updateFilteredTripsList(trips) {
-        console.log('Updating filtered trips list');
-        filteredTripsList.innerHTML = '';
+    function updateCurrentTripsList(trips) {
+        console.log('Updating current trips list');
+        currentTripsList.innerHTML = '';
         trips.forEach(trip => {
             const tripElement = document.createElement('div');
-            tripElement.classList.add('filtered-trip-item');
+            tripElement.classList.add('current-trip-item');
             tripElement.innerHTML = `
                 <p><strong>ID:</strong> ${trip.id}</p>
                 <p><strong>Patient:</strong> ${trip.patient_name}</p>
@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p><strong>Driver:</strong> ${trip.driver}</p>
                 <p><strong>Pickup Time:</strong> ${trip.pickup_time ? new Date(trip.pickup_time).toLocaleString() : 'N/A'}</p>
             `;
-            filteredTripsList.appendChild(tripElement);
+            currentTripsList.appendChild(tripElement);
         });
     }
 

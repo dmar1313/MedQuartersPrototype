@@ -42,18 +42,22 @@
             </div>
         </div>
         <div class="top-half">
-            <div class="tabs">
-                <button class="tab-btn active" data-tab="live-map-hub">Live Map Hub</button>
-                <button class="tab-btn" data-tab="chat">Chat</button>
+            <div class="map-container">
+                <div id="map"></div>
             </div>
-            <div id="live-map-hub" class="tab-content active">
-                <div id="map" class="map-container"></div>
-                <div id="filtered-trips-list" class="filtered-trips-list"></div>
-            </div>
-            <div id="chat" class="tab-content">
-                <!-- Chat interface placeholder -->
-                <div class="chat-placeholder">
-                    <p>Chat functionality coming soon...</p>
+            <div class="right-panel">
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="live-map-hub">Live Map Hub</button>
+                    <button class="tab-btn" data-tab="chat">Chat</button>
+                </div>
+                <div id="live-map-hub" class="tab-content active">
+                    <div id="current-trips-list" class="current-trips-list"></div>
+                </div>
+                <div id="chat" class="tab-content">
+                    <!-- Chat interface placeholder -->
+                    <div class="chat-placeholder">
+                        <p>Chat functionality coming soon...</p>
+                    </div>
                 </div>
             </div>
         </div>
