@@ -18,6 +18,16 @@ login_manager.login_view = 'login'
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+@app.route('/')
+@login_required
+def index():
+    if current_user.role == 'dispatcher':
+        return redirect(url_for('dispatcher_dashboard'))
+    elif current_user.role == 'driver':
+        return redirect(url_for('driver_dashboard'))
+    else:
+        return redirect(url_for('login'))
+
 # Existing routes and functions
 
 @app.route('/get_filtered_trips')
