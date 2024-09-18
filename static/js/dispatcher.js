@@ -24,6 +24,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     console.log('Event listeners added');
 
+    // Initialize tab functionality
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.getAttribute('data-tab');
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+
     // Call fetchFilteredTrips when the page loads
     fetchFilteredTrips();
 
@@ -50,6 +64,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const passenger = passengerFilter.value;
         const startDate = document.getElementById('start-date').value;
         const endDate = document.getElementById('end-date').value;
+
+        console.log('Filter values:', { status, dateRange, driver, passenger, startDate, endDate });
 
         fetch(`/get_filtered_trips?status=${status}&date_range=${dateRange}&driver=${driver}&passenger=${passenger}&start_date=${startDate}&end_date=${endDate}`)
             .then(response => {

@@ -133,6 +133,81 @@
     background-color: #d61c4e;
 }
 
+/* Top Half */
+.top-half {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    margin-bottom: 10px;
+}
+
+.tab-btn {
+    background-color: #393e46;
+    color: #eeeeee;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-size: 16px;
+    border-radius: 5px 5px 0 0;
+}
+
+.tab-btn.active {
+    background-color: #00adb5;
+    color: #ffffff;
+}
+
+.tab-content {
+    display: none;
+    background-color: #1e1e1e;
+    padding: 20px;
+    border-radius: 0 5px 5px 5px;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Map Container */
+.map-container {
+    width: 100%;
+    height: 350px;
+    border-radius: 6px;
+    overflow: hidden;
+    background-color: #121212;
+    margin-bottom: 20px;
+}
+
+/* Filtered Trips List */
+.filtered-trips-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.filtered-trip-item {
+    background-color: #2a2f45;
+    border-radius: 4px;
+    padding: 8px;
+    margin-bottom: 8px;
+    color: #ffffff;
+}
+
+/* Chat Placeholder */
+.chat-placeholder {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    background-color: #2a2f45;
+    border-radius: 6px;
+    color: #eeeeee;
+}
+
 /* Filter Bar */
 .filter-bar {
     display: flex;
@@ -186,47 +261,18 @@
     background-color: #00bcd4;
 }
 
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 20px;
-}
-
-.grid-item {
+/* Bottom Half */
+.bottom-half {
     background-color: #1e1e1e;
     border-radius: 6px;
     padding: 15px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-.grid-item h2 {
+.bottom-half h2 {
     font-size: 1.2rem;
     font-weight: bold;
-    margin-bottom: 2px;
-    color: #ffffff;
-}
-
-/* Map Container */
-.map-container {
-    width: 100%;
-    height: 350px;
-    border-radius: 6px;
-    overflow: hidden;
-    background-color: #121212;
-}
-
-/* Filtered Trips List */
-.filtered-trips-list {
-    max-height: 350px;
-    overflow-y: auto;
-}
-
-.filtered-trip-item {
-    background-color: #2a2f45;
-    border-radius: 4px;
-    padding: 8px;
-    margin-bottom: 8px;
+    margin-bottom: 15px;
     color: #ffffff;
 }
 
@@ -259,93 +305,8 @@
     color: #eeeeee;
 }
 
-/* Pop-up Forms */
-.popup-form {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: #1e1e1e;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    max-width: 400px;
-    width: 100%;
-}
-
-.popup-form h3 {
-    color: #00adb5;
-    margin-bottom: 15px;
-}
-
-.popup-form .form-group {
-    margin-bottom: 15px;
-}
-
-.popup-form label {
-    display: block;
-    margin-bottom: 5px;
-    color: #eeeeee;
-}
-
-.popup-form input[type="text"],
-.popup-form input[type="tel"],
-.popup-form input[type="email"],
-.popup-form input[type="datetime-local"] {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #393e46;
-    background-color: #2a2f45;
-    color: #eeeeee;
-    border-radius: 4px;
-}
-
-.popup-form .submit-btn {
-    background-color: #00adb5;
-    color: #ffffff;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.popup-form .submit-btn:hover {
-    background-color: #00bcd4;
-}
-
-.popup-form .close-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: none;
-    border: none;
-    font-size: 20px;
-    color: #eeeeee;
-    cursor: pointer;
-}
-
-.overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 999;
-}
-
-.hidden {
-    display: none;
-}
-
 /* Responsive adjustments */
 @media (max-width: 768px) {
-    .dashboard-grid {
-        grid-template-columns: 1fr;
-    }
-
     .filter-bar {
         flex-direction: column;
         align-items: stretch;

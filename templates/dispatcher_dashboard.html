@@ -41,6 +41,22 @@
                 <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
             </div>
         </div>
+        <div class="top-half">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="live-map-hub">Live Map Hub</button>
+                <button class="tab-btn" data-tab="chat">Chat</button>
+            </div>
+            <div id="live-map-hub" class="tab-content active">
+                <div id="map" class="map-container"></div>
+                <div id="filtered-trips-list" class="filtered-trips-list"></div>
+            </div>
+            <div id="chat" class="tab-content">
+                <!-- Chat interface placeholder -->
+                <div class="chat-placeholder">
+                    <p>Chat functionality coming soon...</p>
+                </div>
+            </div>
+        </div>
         <div class="filter-bar">
             <div class="filter-group">
                 <label for="status-filter">Status:</label>
@@ -84,17 +100,7 @@
             </div>
             <button id="apply-filters-btn" class="filter-btn">Apply Filters</button>
         </div>
-        <div class="dashboard-grid">
-            <div class="grid-item">
-                <h2>Map</h2>
-                <div id="map" class="map-container"></div>
-            </div>
-            <div class="grid-item">
-                <h2>Filtered Trips</h2>
-                <div id="filtered-trips-list" class="filtered-trips-list"></div>
-            </div>
-        </div>
-        <div class="grid-item">
+        <div class="bottom-half">
             <h2>All Trips</h2>
             <div class="table-responsive">
                 <table class="trips-table">
